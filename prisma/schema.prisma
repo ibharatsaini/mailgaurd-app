@@ -1,0 +1,260 @@
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum CheckStatus {
+  PASS
+  WARN
+  FAIL
+  ERROR // check could not be completed (timeout, network error, etc.)
+}
+
+enum OverallStatus {
+  HEALTHY
+  WARNING
+  CRITICAL
+  UNKNOWN
+}
+
+enum IssueSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum IssueType {
+  MX_MISSING
+  MX_UNRESOLVABLE
+  SPF_MISSING
+  SPF_MULTIPLE
+  SPF_SYNTAX_ERROR
+  SPF_TOO_MANY_LOOKUPS
+  DKIM_NOT_FOUND
+  DKIM_WEAK_KEY
+  DMARC_MISSING
+  DMARC_POLICY_NONE
+  DMARC_SYNTAX_ERROR
+  DNS_RESOLUTION_FAILED
+  HTTP_UNREACHABLE
+  HTTP_ERROR_STATUS
+  TLS_EXPIRING_SOON
+  TLS_EXPIRED
+  TLS_INVALID
+  TLS_UNREACHABLE
+  CHECK_TIMEOUT
+  CHECK_ERROR
+}
+
+enum MonitoringInterval {
+  MIN_15
+  MIN_30
+  HOUR_1
+  HOUR_6
+  HOUR_12
+  HOUR_24
+}
+
+enum WebhookEvent {
+  DOMAIN_CHECK_COMPLETED
+  DOMAIN_ISSUE_DETECTED
+  DOMAIN_CONFIGURATION_CHANGED
+  DOMAIN_MONITORING_FAILED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXHAUSTED // retries exhausted
+}
+
+enum ApiKeyScope {
+  DOMAINS_READ
+  DOMAINS_WRITE
+  CHECKS_TRIGGER
+  WEBHOOKS_MANAGE
+}
+
+enum PlanTier {
+  FREE
+  PRO
+}
+
+// ---------- Models ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  plan         PlanTier @default(FREE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions  Session[]
+  domains   Domain[]
+  apiKeys   ApiKey[]
+  webhooks  Webhook[]
+  auditLogs AuditLog[]
+
+  @@index([email])
+}
+
+model Session {
+  id        String    @id @default(cuid()) // opaque id, also stored in the cookie
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Domain {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hostname      String // normalized, lowercase, punycode
+  dkimSelectors String[] @default([]) // user-supplied selectors, tried in addition to common ones
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  monitoringConfig MonitoringConfig?
+  checks           DomainCheck[]
+  issues           DomainIssue[]
+
+  @@unique([userId, hostname])
+  @@index([userId])
+}
+
+model MonitoringConfig {
+  id        String             @id @default(cuid())
+  domainId  String             @unique
+  domain    Domain             @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  enabled   Boolean            @default(true)
+  interval  MonitoringInterval @default(HOUR_6)
+  lastRunAt DateTime?
+  nextRunAt DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+// A single point-in-time run of all checks for a domain.
+model DomainCheck {
+  id       String @id @default(cuid())
+  domainId String
+  domain   Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  status      OverallStatus @default(UNKNOWN)
+  healthScore Int // 0-100
+  triggeredBy String // "manual" | "scheduled" | "api"
+
+  // per-check structured results (status + latency + details), see CheckResult type in code
+  dnsResult   Json
+  mxResult    Json
+  spfResult   Json
+  dkimResult  Json
+  dmarcResult Json
+  httpResult  Json
+  tlsResult   Json
+
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  issues DomainIssue[]
+
+  @@index([domainId, createdAt])
+}
+
+model DomainIssue {
+  id            String      @id @default(cuid())
+  domainId      String
+  domain        Domain      @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  domainCheckId String
+  domainCheck   DomainCheck @relation(fields: [domainCheckId], references: [id], onDelete: Cascade)
+
+  type       IssueType
+  severity   IssueSeverity
+  message    String
+  detail     Json?
+  resolvedAt DateTime?
+  createdAt  DateTime      @default(now())
+
+  @@index([domainId, createdAt])
+  @@index([domainId, resolvedAt])
+}
+
+model ApiKey {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String // first 8 chars shown to the user, e.g. "mg_live_ab12cd34"
+  hashedKey  String // SHA-256 hex of the full secret
+  scopes     ApiKeyScope[] @default([DOMAINS_READ])
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime      @default(now())
+
+  @@unique([hashedKey])
+  @@index([userId])
+  @@index([prefix])
+}
+
+model Webhook {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url       String
+  secret    String // HMAC signing secret (plaintext, needed to sign each delivery)
+  events    WebhookEvent[]
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id           String         @id @default(cuid())
+  webhookId    String
+  webhook      Webhook        @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event        WebhookEvent
+  payload      Json
+  status       DeliveryStatus @default(PENDING)
+  attempts     Int            @default(0)
+  responseCode Int?
+  errorMessage String?
+  deliveredAt  DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@index([webhookId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String // e.g. "auth.login", "api_key.revoked", "webhook.created"
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action])
+}
