@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/* Class-based dark mode, matching the previous `darkMode: "class"` config. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Tailwind v4 is configured in CSS: every `--color-*` variable
+ * below generates the matching utilities (bg-ink, text-ink-muted,
+ * border-paper-border, bg-signal/10, ...), replacing tailwind.config.ts.
+ */
+@theme {
+  --color-ink: #0b1220;
+  --color-ink-surface: #121b2b;
+  --color-ink-border: #22314a;
+  --color-ink-muted: #8ca0be;
+
+  --color-paper: #f7f6f2;
+  --color-paper-panel: #ffffff;
+  --color-paper-border: #e4e1d8;
+  --color-paper-muted: #6b7280;
+
+  --color-signal: #3ea8ff;
+  --color-signal-dim: #1e5a8c;
+
+  --color-healthy: #22c55e;
+  --color-warning: #f5b429;
+  --color-critical: #ef4444;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Preserve the previous corner radii (Tailwind v4 renamed the scale: the old
+     bare `rounded` is now `rounded-md`, and rounded-lg is pinned to 10px). */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-paper text-ink font-sans;
+  }
+  :focus-visible {
+    outline: 2px solid #3ea8ff;
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@utility data-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}

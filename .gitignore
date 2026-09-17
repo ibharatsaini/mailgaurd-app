@@ -4,3 +4,5 @@ prisma/generated
 dist
 node_modules
 src/generated
+client/node_modules
+
