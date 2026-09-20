@@ -34,12 +34,16 @@ export function createApp() {
     }),
   );
 
-  const allowedOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim());
+  const allowedOrigins = env.CORS_ORIGIN.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
       origin: (origin, callback) => {
         // Allow same-origin/non-browser requests (no Origin header, e.g. curl, API keys).
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        if (!origin || allowedOrigins.includes(origin))
+          return callback(null, true);
         return callback(new Error("Not allowed by CORS"));
       },
       credentials: true, // required so the session cookie is sent cross-origin (Vercel -> Render)
@@ -51,7 +55,9 @@ export function createApp() {
   app.use(cookieParser());
   app.use(apiRateLimit);
 
-  app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+  app.get("/health", (_req, res) =>
+    res.json({ status: "ok", timestamp: new Date().toISOString() }),
+  );
 
   app.use("/api/v1", apiV1Routes);
 
