@@ -5,4 +5,5 @@ dist
 node_modules
 src/generated
 client/node_modules
+client/dist
 
