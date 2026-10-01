@@ -53,7 +53,7 @@ export function setSessionCookie(res: Response, sessionId: string) {
   res.cookie(env.SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "none",
+    sameSite: "lax",
     path: "/",
     maxAge: env.SESSION_TTL_HOURS * 60 * 60 * 1000,
   });
@@ -63,7 +63,7 @@ export function clearSessionCookie(res: Response) {
   res.clearCookie(env.SESSION_COOKIE_NAME, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax",
     path: "/",
   });
 }
