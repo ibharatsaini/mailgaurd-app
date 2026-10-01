@@ -45,7 +45,7 @@ export function createApp() {
           return callback(null, true);
         return callback(new Error("Not allowed by CORS"));
       },
-      allowedHeaders: ["Content-Type", "Authorization", "X-Project-Subdomain"],
+      allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true, // required so the session cookie is sent cross-origin (Vercel -> Render)
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     }),

@@ -2,8 +2,6 @@ import type { Response } from "express";
 import { prisma } from "../db/prisma";
 import { env, isProduction } from "../config/env";
 
-
-
 export interface CreateSessionInput {
   userId: string;
   userAgent?: string;
@@ -11,7 +9,9 @@ export interface CreateSessionInput {
 }
 
 export async function createSession(input: CreateSessionInput) {
-  const expiresAt = new Date(Date.now() + env.SESSION_TTL_HOURS * 60 * 60 * 1000);
+  const expiresAt = new Date(
+    Date.now() + env.SESSION_TTL_HOURS * 60 * 60 * 1000,
+  );
   return prisma.session.create({
     data: {
       userId: input.userId,
