@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { logger } from "./config/logger";
-import { env } from "./config/env";
+import { env, isProduction } from "./config/env";
 import { requestId } from "./middleware/requestId";
 import { apiRateLimit } from "./middleware/rateLimit";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
@@ -29,7 +29,7 @@ export function createApp() {
 
   app.use(
     helmet({
-      contentSecurityPolicy: env.NODE_ENV === "production" ? undefined : false,
+      contentSecurityPolicy: isProduction ? undefined : false,
       crossOriginResourcePolicy: { policy: "cross-origin" }, // API is consumed by a separate origin (Vercel)
     }),
   );

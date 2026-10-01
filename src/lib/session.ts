@@ -52,8 +52,8 @@ export async function revokeAllSessionsForUser(userId: string) {
 export function setSessionCookie(res: Response, sessionId: string) {
   res.cookie(env.SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
-    secure: isProduction, // HTTPS only in production (Render/Vercel are HTTPS)
-    sameSite: isProduction ? "none" : "lax", // cross-site cookie needed: Vercel frontend, Render API
+    secure: isProduction,
+    sameSite: "none",
     path: "/",
     maxAge: env.SESSION_TTL_HOURS * 60 * 60 * 1000,
   });
