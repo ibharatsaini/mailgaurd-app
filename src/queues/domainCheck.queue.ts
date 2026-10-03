@@ -1,4 +1,4 @@
-import { domainCheckQueue } from "./queues";
+import { domainCheckQueue, QUEUE_NAMES } from "./queues";
 
 export interface DomainCheckJobData {
   domainId: string;
@@ -19,11 +19,17 @@ function manualJobId(domainId: string) {
   // 30-second bucket is enough to absorb accidental double-clicks/retried
   // requests without meaningfully delaying an intentional second check.
   const bucket = Math.floor(Date.now() / 30_000);
+  console.log(`Bucket manual job id `, bucket)
   return `manual-${domainId}-${bucket}`;
 }
 
-export async function enqueueManualCheck(domainId: string, triggeredBy: "manual" | "api" = "manual") {
-  return domainCheckQueue.add(
+export async function enqueueManualCheck(
+  domainId: string,
+  triggeredBy: "manual" | "api" = "manual",
+) {
+  console.log(`Initiating Enqueue: `);
+  const enqueued = domainCheckQueue.add(
+    // QUEUE_NAMES.DOMAIN_CHECK,
     "check",
     { domainId, triggeredBy } satisfies DomainCheckJobData,
     {
@@ -33,8 +39,9 @@ export async function enqueueManualCheck(domainId: string, triggeredBy: "manual"
       removeOnComplete: true,
     },
   );
+  console.log(`Returned Enqueued `,enqueued);
+  return enqueued;
 }
-
 
 function schedulerId(domainId: string) {
   return `scheduled-${domainId}`;
@@ -49,6 +56,7 @@ export async function upsertScheduledCheck(domainId: string, everyMs: number) {
     { every: everyMs, startDate: new Date(Date.now() + everyMs) },
     {
       name: "check",
+      // name: QUEUE_NAMES.DOMAIN_CHECK,
       data: { domainId, triggeredBy: "scheduled" } satisfies DomainCheckJobData,
       opts: {
         attempts: 3,

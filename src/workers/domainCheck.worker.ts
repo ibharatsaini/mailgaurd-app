@@ -14,11 +14,12 @@ import { enqueueWebhookEvent } from "../services/webhook.service";
 const CONCURRENCY = 5;
 
 export function startDomainCheckWorker() {
+  console.log(`sTART OMAIN CHECK WORKER`)
   const worker = new Worker<DomainCheckJobData>(
     QUEUE_NAMES.DOMAIN_CHECK,
     async (job: Job<DomainCheckJobData>) => {
       const { domainId, triggeredBy } = job.data;
-
+      console.log(`inside startDomainCheckWorker`)
       const domain = await prisma.domain.findUnique({ where: { id: domainId } });
       if (!domain) {
         // Domain was deleted after the job was enqueued — not an error, just
@@ -26,7 +27,7 @@ export function startDomainCheckWorker() {
         logger.info({ domainId }, "Skipping check for deleted domain");
         return { skipped: true };
       }
-
+      console.log(worker.name , "Worker name")
       return runDomainCheck(domainId, triggeredBy);
     },
     {

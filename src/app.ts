@@ -19,13 +19,13 @@ export function createApp() {
   if (env.TRUST_PROXY) app.set("trust proxy", 1);
 
   app.use(requestId);
-  app.use(
-    pinoHttp({
-      logger,
-      genReqId: (req) => (req as any).id,
-      autoLogging: { ignore: (req) => req.url === "/health" },
-    }),
-  );
+  // app.use(
+  //   pinoHttp({
+  //     logger,
+  //     genReqId: (req) => (req as any).id,
+  //     autoLogging: { ignore: (req) => req.url === "/health" },
+  //   }),
+  // );
 
   app.use(
     helmet({

@@ -70,7 +70,10 @@ function deriveIssues(checks: Record<string, CheckResult<any>>): DerivedIssue[] 
 }
 
 export async function runDomainCheck(domainId: string, triggeredBy: "manual" | "scheduled" | "api") {
+  console.log(`Inside domain check `)
   const domain = await prisma.domain.findUniqueOrThrow({ where: { id: domainId } });
+  console.log(`Inside domain check domid`,domain.id)
+
   const start = Date.now();
 
   logger.info({ domainId, hostname: domain.hostname, triggeredBy }, "Starting domain check");

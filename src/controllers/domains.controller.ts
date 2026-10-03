@@ -157,14 +157,13 @@ export async function triggerCheck(
 ) {
   try {
     const domain = await getOwnedDomainOrThrow(req.userId!, req.params.id);
+    console.log(`domain `,domain)
     const triggeredBy = req.authMethod === "api_key" ? "api" : "manual";
+    console.log(`triggeredBy `,triggeredBy)
 
-    // Run synchronously-but-through-the-same-code-path when small (portfolio
-    // UX: instant feedback), while still going through the queue for
-    // scheduled runs. Enqueue is authoritative; this call also returns the
-    // queued job id so the frontend can poll if it prefers not to block.
     const job = await enqueueManualCheck(domain.id, triggeredBy);
-    res.status(202).json({ message: "Check queued", jobId: job.id });
+    console.log(job, "JOB")
+    res.status(202).json({ message: "Check queued", jobId: job.id  as any});
   } catch (err) {
     next(err);
   }

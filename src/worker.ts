@@ -2,10 +2,12 @@ import { logger } from "./config/logger";
 import { startDomainCheckWorker } from "./workers/domainCheck.worker";
 import { startWebhookDeliveryWorker } from "./workers/webhookDelivery";
 
-logger.info("Starting MailGuard background worker process");
+logger.info("Starting MailGuard background worker process.");
 
 const domainCheckWorker = startDomainCheckWorker();
+// domainCheckWorker.run();
 const webhookWorker = startWebhookDeliveryWorker();
+// webhookWorker.run();
 
 async function shutdown(signal: string) {
   logger.info({ signal }, "Worker shutting down gracefully");

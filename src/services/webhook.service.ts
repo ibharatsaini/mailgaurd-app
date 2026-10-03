@@ -11,6 +11,7 @@ import { logger } from "../config/logger";
  * block the request path or the check pipeline.
  */
 export async function enqueueWebhookEvent(userId: string, event: WebhookEvent, payload: Record<string, unknown>) {
+  console.log(`Enqueued webhook payload `,payload)
   const webhooks = await prisma.webhook.findMany({
     where: { userId, isActive: true, events: { has: event } },
   });
