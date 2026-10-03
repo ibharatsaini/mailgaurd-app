@@ -40,6 +40,8 @@ const envSchema = z.object({
   // z.coerce.boolean() would treat the string "false" as true (any non-empty
   // string is truthy); stringbool() parses "true"/"false"/"1"/"0"/etc. properly.
   TRUST_PROXY: z.stringbool().default(true),
+  EMBEDDED_WORKER: z.stringbool().default(true),
+
 });
 
 const parsed = envSchema.safeParse(process.env);

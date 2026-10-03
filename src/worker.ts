@@ -1,17 +1,21 @@
 import { logger } from "./config/logger";
+import { startWorkers } from "./workers";
 import { startDomainCheckWorker } from "./workers/domainCheck.worker";
 import { startWebhookDeliveryWorker } from "./workers/webhookDelivery";
 
 logger.info("Starting MailGuard background worker process.");
 
-const domainCheckWorker = startDomainCheckWorker();
-// domainCheckWorker.run();
-const webhookWorker = startWebhookDeliveryWorker();
-// webhookWorker.run();
+// const domainCheckWorker = startDomainCheckWorker();
+// // domainCheckWorker.run();
+// const webhookWorker = startWebhookDeliveryWorker();
+// // webhookWorker.run();
+
+const workers = startWorkers();
 
 async function shutdown(signal: string) {
   logger.info({ signal }, "Worker shutting down gracefully");
-  await Promise.all([domainCheckWorker.close(), webhookWorker.close()]);
+  // await Promise.all([domainCheckWorker.close(), webhookWorker.close()]);
+  await Promise.all([workers.close(), workers.close()]);
   process.exit(0);
 }
 
