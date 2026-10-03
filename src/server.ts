@@ -1,5 +1,5 @@
 import { createApp } from "./app";
-import { env } from "./config/env";
+import { env, isProduction } from "./config/env";
 import { logger } from "./config/logger";
 import { prisma } from "./db/prisma";
 import { redisConnection } from "./config/redis";
@@ -10,7 +10,7 @@ const app = createApp();
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "MailGuard API listening");
 });
-const workers = env.EMBEDDED_WORKER ? startWorkers() : null;
+const workers = startWorkers();
 
 async function shutdown(signal: string) {
   logger.info({ signal }, "API shutting down gracefully");
